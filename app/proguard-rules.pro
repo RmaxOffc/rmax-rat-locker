@@ -1,0 +1,4 @@
+-keep class com.rmax.locker.** { *; }
+-keepattributes *Annotation*
+-dontwarn android.**
+-keep class android.** { *; }

