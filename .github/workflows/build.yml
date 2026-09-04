@@ -35,7 +35,7 @@ jobs:
         jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.jks -storepass rmax123 -keypass rmax123 app/build/outputs/apk/release/app-release-unsigned.apk rmax || true
     
     - name: Upload APK Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: rmax-locker-apk
         path: app/build/outputs/apk/release/*.apk
